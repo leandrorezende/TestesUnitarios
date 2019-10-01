@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: br.ce.wcaquino.servicos.CalculoValorLocacaoTest
+-------------------------------------------------------------------------------
+Tests run: 12, Failures: 0, Errors: 0, Skipped: 6, Time elapsed: 30.67 sec - in br.ce.wcaquino.servicos.CalculoValorLocacaoTest

@@ -1,0 +1,199 @@
+TESTES UNITÁRIOS
+	-Princípios
+		devem ser rápidos
+		um teste não deve depender de outro, e pode rodar em qualquer ordem
+		um teste pode ser executado várias vezes a qualquer momento, sempre apresenta o mesmo resultado
+		deve apresentar os resultados de fail or sucess
+	
+	Colocando as classes de teste na mesma estrutura de pacotes que a classe testada permite ter acesso 
+		a mais métodos e instância da classe testada.
+		
+	Um teste deve permitir que seu resultado possa ser avaliado independentemente da ordem dos demais teste
+	Caso queira aplicar ordem, utilize a anotação @FixMethodOrder(MethodSorters.NAME_ASCENDING), mas isso 
+	não é uma boa prática.
+	
+	template base para um teste
+	@Test
+	public void deveSuaAcaoAqui() {
+		//cenario
+		
+		//acao
+		
+		//verificacao
+	}
+	
+	Para definir uma condição dentro do corpo do teste para que ele seja executado ou não, sem precisar do @Ignore	
+	Ferramenta muito útil quando o teste depende de um determinado recurso
+		Assume.assumeFalse(DataUtils.verificarDiaSemana(new Date(), Calendar.SATURDAY));
+		
+	Parametrização de testes
+	Data Driver Test - executar a mesma estrutura com os dados sendo validados conforme as necessidades dos teste, vc 
+	consegue em um único teste validar vários cases. 
+	@RunWith(Parameterized.class) diz ao JUnit que os testes dessa classe devem ser tratados de uma forma diferente
+	
+	@Parameter - define os parametros para a execução dos testes, sendo 0 indexado
+	
+	@Parameters(name="Teste {index} = {0} - {1}") - define o conjunto de dados a ser utilizado como parâmetro para os 
+		testes, com os valores name entre parenteses para formatar a que o teste ira informar no cabeçalho
+		
+	Define todos os testes que vc quer que sejam executados por essa Suite
+	@SuiteClasses({
+		CalculadoraTest.class,
+		CalculoValorLocacaoTest.class,
+		LocacaoServiceTest.class
+	})
+	
+	Criar um execução de teste do tipo Suite, é preciso declarar um classe do tipo Suite, o java obriga a ter essa declaração
+	
+	@RunWith(Suite.class)
+	@SuiteClasses({
+		CalculadoraTest.class,
+		CalculoValorLocacaoTest.class,
+		LocacaoServiceTest.class
+	})
+	public class SuiteExecucao {
+		//Remova se puder!
+	}
+	pode ser adicionada as anotações BeforeClass and AfterClass, para determinar uma ação a ser executada antes e após uma bateria
+	Sendo bem úteis para definição de configurações iniciais
+	@BeforeClass
+	public static void before() {
+		System.out.println("before");
+	}
+	
+	@AfterClass
+	public static void after() {
+		System.out.println("after");
+	}
+	
+	BuilderMaster lib - ajuda na criação dos builder dos objetos utilizados nas classes de teste
+	
+	Plugin Eclemma - aponta quais partes do código foram exercitados com a execução dos testes
+		vermelho - linha não executada
+		amarela - linha executada parcialmente
+		verde - linha executada completamente
+		
+		
+	Um teste unitário não deve ter dependência externa, como acesso ao banco, rede, arquivos ou qualquer outra entidade externa ao 
+	código que queremos testar. Pois isso não isolaria os testes, deixariam mais lentos, mudanças de ambiente, etc
+	
+	O mockito, cria dinâmicamente objetos falsos para as classes de teste. Ele gera objetos mock, que são capazes de definir comportamentos
+	dinâmicos e inclusive verificar se eles forma utilizados
+	Mockito.mock(ClasseMocada.class) - é uma instância de um objeto que responde como se estive implentado a classe que utilizou como origem,
+	faz o comportamento padrão de acordo com a assinatura do método, se for void faz nada, se retorna string retorna string vazia, etc
+	é possível definir retornos desse objeto como seja necessário
+	Na maioria das vezes será necessário um método para injetar o objeto mocado, que seria um metodo set do mesmo
+	
+	Quando necessário alterar o retorno default de um objeto mocado, temos que alterar isso dentro do teste	
+		when(spc.possuiNegativacao(usuario)).thenReturn(true);
+		
+	verificar comportamento de um método dentro do corpo do método testado, últil quando o mesmo não tem retorno
+		Mockito.verify(email).notificarAtraso(usuario);
+	Esse método verify passando o objecto mocado como parâmetro seguindo do método que esta sendo chamado como o valor esperado,
+	veficando assim se o métodos notificarAtraso foi chamado e com o parametro usuario especificado
+		testa que determinando comportamento nunca ocorra
+		verify(email, never()).notificarAtraso(usuario2);
+	define que nenhuma intereção com o objeco mocado deve ocorrer
+		verifyNoMoreInteractions(email);
+		
+	define que nenhuma interção com o objeto mocado deve ocorrer
+		verifyZeroInteractions(email);
+	
+	Mockito facilita a criação de mocks utilizando anotações 
+	@InjectMocks //define que esse objeto receberá os objetos mocados
+	private LocacaoService service;
+	
+	@Mock //define que esse objeto será um mock
+	private SPCService spc;
+	
+	Argument capture - captura os parâmetros que foram passados para um dado método. É intressante de ser utilizado para cenários onde se 
+	deseja testar um método que não retorna valor, mas que pode ser testado o parãmetro passado para algum outro médodo dentro do mesmo
+	ArgumentCaptor<Locacao> argCapt = ArgumentCaptor.forClass(Locacao.class);
+		Mockito.verify(dao).salvar(argCapt.capture());
+		
+	@Spy
+		diferente da chamada de um método a partir de um objeto mocado, onde o retorno defautl, e o valor default do tipo da variável, para 
+		um objeto do tipo Spy, ao executar uma chamada de método por ele, o retorno do método será o mesmo de uma execeução real. Por conta disso,
+		o Spy funciona somente com classes concretas, e não funciona com classes interfaces.
+		Esse comportamento pode ser alcançado utilizando o objeto mock da seguinte forma	
+			Mockito.when(calcMock.somar(1,2)).thenCallRealMethod();
+		Temos como definir que um determinando método chamado pelo objeto do tipo spy não executará nada
+		Mockito.doNothing().when(calcSpy).imprime();
+		Para definir um retorno para uma chamada de um método de um objeto spy de forma a evitar que seu corpo seja executado
+		Mockito.doReturn(5).when(calcSpy).somar(1, 2); 
+		
+	PowerMock
+		- Possibilita alterar o comportamento de construtores, e acessar métodos privados
+		As classes que terão os comportamentos alterados, devem ser definidas com a seguinte notação logo acima do nome da classe
+		@PrepareForTest({LocacaoService.class, DataUtils.class})
+		
+		Alterando o retorno do construtor new Date() via powermock
+			PowerMockito.whenNew(Date.class).withNoArguments().thenReturn(DataUtils.obterData(28, 04, 2017));
+		Para verificar se um construtor foi chamado, podemos utilizar 
+			PowerMockito.verifyNew(Date.class).withNoArguments();
+		
+		Para verificar se um método static foi chamado
+			Calendar calendar = Calendar.getInstance();
+			calendar.set(Calendar.DAY_OF_MONTH,29);
+			calendar.set(Calendar.MONTH,Calendar.APRIL);
+			calendar.set(Calendar.YEAR,2017);
+			PowerMockito.mockStatic(Calendar.class);
+			PowerMockito.when(Calendar.getInstance()).thenReturn(calendar);
+			
+		Para verificar a quantidade de chamadas feitas
+		PowerMockito.verifyNew(Date.class, Mockito.times(2)).withNoArguments();	
+		PowerMockito.verifyStatic(Mockito.times(2));
+		
+	Mock an object using PowerMockito
+		service = PowerMockito.spy(service);
+		
+	Mock a private metodo using PowerMockito
+		PowerMockito.doReturn(1.0).when(service, "calcularValorLocacao", filmes);
+		
+	Podemos utilizar a classe WhiteBox do power mock para testar métodos privados diretamente
+		Double valor = (Double) Whitebox.invokeMethod(service, "calcularValorLocacao", filmes);
+		
+	Não é uma boa estratégia mocar métodos privados, pois o PowerMock utilizado para requisita modificações na forma de inicialização
+	da classe de teste que traz complicações na avaliação dos testes realizados
+	
+	Para invocar métodos privatos diretamente, utilizaremos a classe classe Reflection do java
+		Class<LocacaoService> clazz = LocacaoService.class;
+		Method metodo = clazz.getDeclaredMethod("calcularValorLocacao", List.class);
+		metodo.setAccessible(true);
+		Double valor = (Double) metodo.invoke(service, filmes);
+	Esse tipo de deste é feito quando o método privado é muito complexo, e vc quer dar um efoque maior nele
+	
+	O PowerMock só é indicado para cenários onde os testes vão ser aplicados em projetos legados, onde os testes são excassos ou que haja
+	receio em fazer qualquer refatoração de código.
+	
+	
+	Teste em paraledo
+		O Junit não tem suporte nativo ao paralelismo
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+		
+		
+		
+		
+		
+		
